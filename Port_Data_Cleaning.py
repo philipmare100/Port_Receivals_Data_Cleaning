@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
+import pytz
 
 # Streamlit app title
 st.title("Port Receiving Supervision Data - Data Exceptions and CSV Download")
@@ -43,47 +45,48 @@ if uploaded_file is not None:
             )
             combined_df = combined_df.sort_values(by=added_time_column, ascending=False)
 
-            # Display duplicates and flagged entries as in previous code
+            # Display total and data for duplicates exceptions
             duplicates = combined_df[combined_df.duplicated(subset=["Bag Scanned & Manual"], keep=False)]
-
-
-            def collect_duplicate_info(group):
-                added_time = ', '.join(group[added_time_column].astype(str).unique())
-                bag_scanned_manual = group["Bag Scanned & Manual"].iloc[0]
-                kico_seal_no = ', '.join(group[kico_seal_column].astype(str).unique())
-                horse_id = ', '.join(group[horse_registration_column].astype(str).unique())
-                lot_id = ', '.join(group["Lot"].dropna().unique())
-
-                return pd.Series({
-                    "Added Time": added_time,
-                    "Bag Scanned & Manual": bag_scanned_manual,
-                    "KICO SEAL NO.": kico_seal_no,
-                    "Horse Registration IDs": horse_id,
-                    "Lot IDs": lot_id
-                })
-
-
             duplicates_exceptions = duplicates.groupby("Bag Scanned & Manual").apply(
-                collect_duplicate_info).reset_index(drop=True)
+                lambda group: pd.Series({
+                    "Added Time": ', '.join(group[added_time_column].astype(str).unique()),
+                    "Bag Scanned & Manual": group["Bag Scanned & Manual"].iloc[0],
+                    "KICO SEAL NO.": ', '.join(group[kico_seal_column].astype(str).unique()),
+                    "Horse Registration IDs": ', '.join(group[horse_registration_column].astype(str).unique()),
+                    "Lot IDs": ', '.join(group["Lot"].dropna().unique())
+                })
+            ).reset_index(drop=True)
             duplicates_exceptions = duplicates_exceptions.sort_values(by="Added Time", ascending=False)
+
+            st.write(f"Total Duplicates Exceptions: {len(duplicates_exceptions)}")
             st.write("Duplicates Exceptions DataFrame (Sorted by Added Time):")
             st.dataframe(duplicates_exceptions)
 
+            # Display total and data for flagged entries
             flagged_bag_id_df = combined_df[combined_df[bag_id_column].str.len().between(16, 24)]
             flagged_bag_id_df = flagged_bag_id_df[[added_time_column, bag_id_column, kico_seal_column]]
             flagged_bag_id_df.columns = ["Added Time", "BAG ID", "KICO SEAL NO."]
             flagged_bag_id_df = flagged_bag_id_df.sort_values(by="Added Time", ascending=False)
+
+            st.write(f"Total Flagged BAG ID Entries: {len(flagged_bag_id_df)}")
             st.write("Flagged BAG ID Entries (Length Between 16 and 24 Characters, Sorted by Added Time):")
             st.dataframe(flagged_bag_id_df)
 
-            # Date-time picker for Combined_df_for_Download
+            # Display total and data for combined_df
+            st.write(f"Total Combined DataFrame Entries: {len(combined_df)}")
             st.write("Combined DataFrame with extracted components (Sorted by Added Time):")
             st.dataframe(combined_df)
+
+            # Get the current time in South Africa timezone
+            sa_timezone = pytz.timezone('Africa/Johannesburg')
+            current_time_sa = datetime.now(sa_timezone)
+
+            # Date-time picker for Combined_df_for_Download
             st.write("Select a date-time range to filter the Combined DataFrame:")
             start_date = st.date_input("Start Date", value=combined_df[added_time_column].min().date())
             start_time = st.time_input("Start Time", value=pd.to_datetime("00:00").time())
-            end_date = st.date_input("End Date", value=combined_df[added_time_column].max().date())
-            end_time = st.time_input("End Time", value=pd.to_datetime("23:59").time())
+            end_date = st.date_input("End Date", value=current_time_sa.date())
+            end_time = st.time_input("End Time", value=current_time_sa.time())
 
             start_datetime = pd.to_datetime(f"{start_date} {start_time}")
             end_datetime = pd.to_datetime(f"{end_date} {end_time}")
@@ -116,7 +119,8 @@ if uploaded_file is not None:
             # Reorder columns according to column_mappings
             mapped_df_for_download = mapped_df_for_download[column_mappings.values()]
 
-            # Display and provide download link for CSV
+            # Display total and mapped DataFrame for download
+            st.write(f"Total Mapped DataFrame for Download: {len(mapped_df_for_download)}")
             st.write("Mapped DataFrame for Download:")
             st.dataframe(mapped_df_for_download)
             csv = mapped_df_for_download.to_csv(index=False)
