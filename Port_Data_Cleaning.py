@@ -14,6 +14,12 @@ if uploaded_file is not None:
         df = pd.read_excel(uploaded_file, sheet_name="RawData", header=1)
         df['Added Time'] = pd.to_datetime(df['Added Time'], errors='coerce')  # Ensure Added Time is in datetime format
 
+        # Standardize "BAG OFFLOADING DATE" or "BAG OFFLOADED DATE" to a single column name
+        if 'BAG OFFLOADING DATE' in df.columns:
+            df.rename(columns={'BAG OFFLOADING DATE': 'BAG OFFLOADED DATE'}, inplace=True)
+        elif 'BAG OFFLOADED DATE' in df.columns:
+            df.rename(columns={'BAG OFFLOADED DATE': 'BAG OFFLOADED DATE'}, inplace=True)
+
         # Identify columns and process data as in previous code
         bag_id_column = next((col for col in df.columns if "bag id" in col.lower()), None)
         horse_registration_column = next((col for col in df.columns if "receiving horse registration" in col.lower()),
@@ -89,7 +95,7 @@ if uploaded_file is not None:
                 "Bag Scanned & Manual": "name",
                 "KICO SEAL NO.": "PRN_KICO_SEAL",
                 "MMS SEAL NO": "MMS_SEAL_NO",
-                "BAG OFFLOADING DATE": "PRN_RECEIVED_DATE",
+                "BAG OFFLOADED DATE": "PRN_RECEIVED_DATE",  # Updated to use standardized column
                 "RECORD BAG CONDITION": "PORT_PRN_BAG_CONDITION_STATUS",
                 "RECEIVING WAREHOUSE": "PRN_WAREHOUSE_NAME",
                 "RECEIVING HORSE REGISTRATION": "PRN_TRUCK_REG",
