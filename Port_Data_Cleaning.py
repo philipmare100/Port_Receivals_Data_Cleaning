@@ -124,6 +124,9 @@ if uploaded_file is not None:
             # Reorder columns according to column_mappings
             mapped_df_for_download = mapped_df_for_download[column_mappings.values()]
 
+            # Define the filename based on start and end date-time selections
+            file_name = f"From_{start_date.strftime('%Y%m%d')}_{start_time.strftime('%H%M')}_to_{end_date.strftime('%Y%m%d')}_{end_time.strftime('%H%M')}_Port_Receiving.csv"
+
             # Display total and mapped DataFrame for download
             st.write(f"Total Mapped DataFrame for Download: {len(mapped_df_for_download)}")
             st.write("Mapped DataFrame for Download:")
@@ -132,7 +135,7 @@ if uploaded_file is not None:
             st.download_button(
                 label="Download Mapped CSV",
                 data=csv,
-                file_name="mapped_combined_df_for_download.csv",
+                file_name=file_name,
                 mime="text/csv"
             )
 
