@@ -36,7 +36,6 @@ if uploaded_file is not None:
                 parts.update({item.split(': ')[0]: item.split(': ')[1] for item in bag_id.split(',') if ': ' in item})
                 return parts
 
-
             bag_info_df = df[bag_id_column].dropna().apply(extract_bag_info).apply(pd.Series)
             combined_df = pd.concat([df, bag_info_df], axis=1)
             combined_df["Bag Scanned & Manual"] = combined_df.apply(
@@ -44,6 +43,11 @@ if uploaded_file is not None:
                 axis=1
             )
             combined_df = combined_df.sort_values(by=added_time_column, ascending=False)
+
+            # Display total and data for combined_df first
+            st.write(f"Total Combined DataFrame Entries: {len(combined_df)}")
+            st.write("Combined DataFrame with extracted components (Sorted by Added Time):")
+            st.dataframe(combined_df)
 
             # Display total and data for duplicates exceptions
             duplicates = combined_df[combined_df.duplicated(subset=["Bag Scanned & Manual"], keep=False)]
@@ -71,11 +75,6 @@ if uploaded_file is not None:
             st.write(f"Total Flagged BAG ID Entries: {len(flagged_bag_id_df)}")
             st.write("Flagged BAG ID Entries (Length Between 16 and 24 Characters, Sorted by Added Time):")
             st.dataframe(flagged_bag_id_df)
-
-            # Display total and data for combined_df
-            st.write(f"Total Combined DataFrame Entries: {len(combined_df)}")
-            st.write("Combined DataFrame with extracted components (Sorted by Added Time):")
-            st.dataframe(combined_df)
 
             # Get the current time in South Africa timezone
             sa_timezone = pytz.timezone('Africa/Johannesburg')
@@ -117,9 +116,9 @@ if uploaded_file is not None:
                     mapped_df_for_download[col] = None
 
             # Add "+02:00" to all time columns in mapped_df_for_download
-            for col in ["PRN_RECEIVED_DATE","PRN_FORM_COMPLETE"]:  # Specify all columns with time information
+            for col in ["PRN_RECEIVED_DATE", "PRN_FORM_COMPLETE"]:  # Specify all columns with time information
                 if col in mapped_df_for_download.columns:
-                            mapped_df_for_download[col] = mapped_df_for_download[col].astype(str) + "+02:00"
+                    mapped_df_for_download[col] = mapped_df_for_download[col].astype(str) + "+02:00"
 
             # Reorder columns according to column_mappings
             mapped_df_for_download = mapped_df_for_download[column_mappings.values()]
